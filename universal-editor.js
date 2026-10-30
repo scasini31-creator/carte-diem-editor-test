@@ -102,7 +102,21 @@ function universalDecorate(){
 
 // L'iframe può aver terminato il caricamento prima che questo script venga eseguito.
 const ueStatus=document.createElement('strong');ueStatus.style.cssText='color:#ffe4a2;font-size:12px';ueStatus.textContent='Avvio editor…';ueToolbar.appendChild(ueStatus);ueToolbar.insertBefore(ueNav,ueToolbar.firstChild);
-const ueAdmin=document.createElement('button');ueAdmin.type='button';ueAdmin.textContent='Gestisci prodotti / Mancolista / Evidenza';ueToolbar.appendChild(ueAdmin);ueAdmin.onclick=()=>{if(!confirm('Aprire il pannello amministrativo? ATTENZIONE: salvare prodotti, Mancolista o Evidenza modifica immediatamente il database reale e il sito pubblico.'))return;showEditor();setEditorMode('');try{adminFrame.contentWindow.scrollTo(0,0)}catch(e){}hint.textContent='Pannello amministrativo completo. Le modifiche salvate qui sono REALI.';};
+const ueActions=document.createElement('div');ueActions.style.cssText='display:flex;gap:7px;flex-wrap:wrap;width:100%;margin-top:6px';ueToolbar.appendChild(ueActions);
+const ueButtons=[
+ {label:'📦 Gestione catalogo',selector:'#catalog-management',title:'aggiungere, modificare o eliminare prodotti'},
+ {label:'⭐ Prodotti in evidenza',selector:'#cd-featured-admin',title:'gestire i prodotti in evidenza'},
+ {label:'📋 Mancolista',selector:'#cd-mancolista-admin',title:'gestire la mancolista'}
+];
+ueButtons.forEach(({label,selector,title})=>{
+ const btn=document.createElement('button');btn.type='button';btn.textContent=label;btn.style.cssText='background:#e6b951;color:#14171e;font-weight:700';ueActions.appendChild(btn);
+ btn.onclick=()=>{
+  if(!confirm('Aprire '+title+'? Le modifiche salvate qui aggiornano il database REALE e possono essere visibili sul sito pubblico.'))return;
+  showEditor();setEditorMode(selector);hint.textContent='Gestione: '+title+'. Le modifiche salvate qui sono REALI.';
+  try{const d=adminFrame.contentDocument;const target=d.querySelector(selector==='#catalog-management'?'#productForm':selector);if(target)target.scrollIntoView({block:'start'});else adminFrame.contentWindow.scrollTo(0,0);}catch(e){}
+ };
+});
+
 const ueTest=document.createElement('button');ueTest.type='button';ueTest.textContent='Prova modifica titolo';ueToolbar.appendChild(ueTest);
 ueTest.onclick=()=>{try{const d=preview.contentDocument;const el=d?.querySelector('#categorie h2, #categorie h3, h2, h1');if(el)ueOpen(el);else alert('Titolo non trovato nella pagina');}catch(e){alert('Errore: '+e.message);}};
 // Collega immediatamente l'editor, anche quando l'evento load e' gia' passato.
