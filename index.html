@@ -20,7 +20,7 @@ iframe{width:100%;height:100%;border:0;background:white}
 <div class="controls" role="group" aria-label="Pagina da visualizzare">
 <button data-page="homepage.html" aria-pressed="true">Homepage</button>
 <button data-page="catalogo.html" aria-pressed="false">Catalogo</button>
-<button data-page="mancolista.html" aria-pressed="false">Mancolista</button>
+<button data-page="richieste.html" aria-pressed="false">Mancolista</button>
 <button id="refresh" type="button">Aggiorna anteprima ↻</button><button id="cloudSave" type="button">Salva bozza online</button><button id="cloudLoad" type="button">Carica bozza online</button><span id="cloudStatus" role="status" style="align-self:center;color:#ffe2a4"></span>
 </div>
 <div id="textEditor" class="text-editor" role="dialog" aria-modal="true" aria-label="Modifica testo"><div class="text-editor-panel"><h2 id="textEditorTitle">Modifica testo</h2><label for="textEditorInput">Testo</label><textarea id="textEditorInput"></textarea><p>Le modifiche ai testi sono una bozza visibile nell'anteprima: non vengono ancora pubblicate sul sito.</p><div class="actions"><button type="button" id="applyText">Applica all'anteprima</button><button type="button" id="cancelText">Annulla</button><button type="button" id="exportTexts">Esporta bozza JSON</button></div></div></div><div id="imageEditor" class="image-editor" role="dialog" aria-modal="true" aria-label="Modifica immagine"><div class="image-editor-panel"><h2 id="imageEditorTitle">Modifica immagine</h2><p>Seleziona un'immagine per la bozza locale. Non viene caricata su Supabase né pubblicata.</p><input id="imageEditorFile" type="file" accept="image/png,image/jpeg,image/webp"><div class="actions"><button id="applyImage" type="button">Applica all'anteprima</button><button id="cancelImage" type="button">Annulla</button><button id="removeImage" type="button">Ripristina originale</button></div></div></div><main><section class="site"><div class="section-heading">Anteprima del sito</div><iframe id="preview" title="Anteprima sito" src="homepage.html"></iframe></section>
@@ -49,7 +49,7 @@ const textTargets=[
 const DRAFT_KEY='cd-visual-editor-draft-v1';
 let savedDraft={};try{savedDraft=JSON.parse(localStorage.getItem(DRAFT_KEY)||'{}')||{}}catch(e){}
 const textDraft=savedDraft.texts||{},imageDraft=savedDraft.images||{};let currentText=null;
-function persistDraft(){try{localStorage.setItem(DRAFT_KEY,JSON.stringify({texts:textDraft,images:imageDraft}));return true}catch(e){alert('Spazio locale insufficiente: esporta la bozza e usa immagini più leggere.');return false}}
+function persistDraft(){try{localStorage.setItem(DRAFT_KEY,JSON.stringify({texts:textDraft,images:imageDraft,elements:ueData}));return true}catch(e){alert('Spazio locale insufficiente: esporta la bozza e usa immagini più leggere.');return false}}
 const textModal=document.getElementById('textEditor'),textInput=document.getElementById('textEditorInput');
 function editText(item){
  const d=preview.contentDocument,el=d.querySelector(item.selector);if(!el)return;
@@ -93,14 +93,14 @@ async function cloudAction(kind){
  try{
   const {sb,user}=await cloudContext();
   if(kind==='save'){
-   const {error}=await sb.from('visual_editor_drafts').upsert({owner_id:user.id,payload:{texts:textDraft,images:imageDraft},updated_at:new Date().toISOString()},{onConflict:'owner_id'});
+   const {error}=await sb.from('visual_editor_drafts').upsert({owner_id:user.id,payload:{texts:textDraft,images:imageDraft,elements:ueData},updated_at:new Date().toISOString()},{onConflict:'owner_id'});
    if(error)throw error;status.textContent='Bozza salvata online. Nessuna pubblicazione.';
   }else{
    if(!confirm('Caricare la bozza online? Sostituirà la bozza locale non salvata.')){status.textContent='Operazione annullata.';return;}
    const {data,error}=await sb.from('visual_editor_drafts').select('payload').eq('owner_id',user.id).maybeSingle();if(error)throw error;
    if(!data){status.textContent='Nessuna bozza online trovata.';return;}
    for(const k of Object.keys(textDraft))delete textDraft[k];for(const k of Object.keys(imageDraft))delete imageDraft[k];
-   Object.assign(textDraft,data.payload?.texts||{});Object.assign(imageDraft,data.payload?.images||{});
+   Object.assign(textDraft,data.payload?.texts||{});Object.assign(imageDraft,data.payload?.images||{});for(const k of Object.keys(ueData))delete ueData[k];Object.assign(ueData,data.payload?.elements||{});
    persistDraft();preview.contentWindow.location.reload();status.textContent='Bozza online caricata.';
   }
  }catch(e){status.textContent='Non riuscito: '+e.message+' Verifica che la migrazione SQL sia stata applicata.';}
@@ -205,5 +205,5 @@ function setEditorMode(selector){
  }
 }
 adminFrame.addEventListener('load',()=>{if(modal.classList.contains('open'))setEditorMode('#productForm');});
-preview.addEventListener('load',decoratePreview);
-</script></body></html>
+preview.addEventListener('load',universalDecorate);
+</script><script src="universal-editor.js"></script></body></html>
