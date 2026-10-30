@@ -79,7 +79,11 @@ ueGet('Apply').onclick=()=>{
 ueGet('Restore').onclick=()=>{if(!ueSelected)return;delete ueData[ueSelected.page+'|'+ueSelected.selector];persistDraft();uePanel.style.display='none';preview.contentWindow.location.reload();};
 document.getElementById('ueResetPage').onclick=()=>{if(!confirm('Ripristinare tutte le modifiche in bozza per questa pagina?'))return;for(const k of Object.keys(ueData))if(k.startsWith(uePage()+'|'))delete ueData[k];persistDraft();preview.contentWindow.location.reload();};
 function universalDecorate(){
- const d=preview.contentDocument;if(!d)return;
+ let d;try{d=preview.contentDocument;}catch(e){ueStatus.textContent='Anteprima non accessibile: '+e.message;return;}
+ if(!d||!d.body){ueStatus.textContent='Attendo il caricamento della pagina…';return;}
+ if(d.__ueAttached){ueStatus.textContent='Editor pronto: tocca un elemento';return;}
+ d.__ueAttached=true;
+ ueStatus.textContent='Editor pronto: tocca un elemento';
  ueRestoreAll();
  d.addEventListener('click',e=>{
   if(!ueEnabled)return;
@@ -95,4 +99,10 @@ function universalDecorate(){
 }
 
 // L'iframe può aver terminato il caricamento prima che questo script venga eseguito.
-if(preview.contentDocument?.readyState==='complete')universalDecorate();
+const ueStatus=document.createElement('strong');ueStatus.style.cssText='color:#ffe4a2;font-size:12px';ueStatus.textContent='Avvio editor…';ueToolbar.appendChild(ueStatus);
+const ueTest=document.createElement('button');ueTest.type='button';ueTest.textContent='Prova modifica titolo';ueToolbar.appendChild(ueTest);
+ueTest.onclick=()=>{try{const d=preview.contentDocument;const el=d?.querySelector('#categorie h2, #categorie h3, h2, h1');if(el)ueOpen(el);else alert('Titolo non trovato nella pagina');}catch(e){alert('Errore: '+e.message);}};
+// Collega immediatamente l'editor, anche quando l'evento load e' gia' passato.
+try{universalDecorate();}catch(e){ueStatus.textContent='Errore editor: '+e.message;}
+preview.addEventListener('load',()=>{try{universalDecorate();}catch(e){ueStatus.textContent='Errore editor: '+e.message;}},true);
+
