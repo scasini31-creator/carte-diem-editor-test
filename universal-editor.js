@@ -90,6 +90,9 @@ function universalDecorate(){
  },true);
  d.addEventListener('mouseover',e=>{if(!ueEnabled)return;const el=e.target.closest('body *');if(!el||el===ueOutline)return;if(ueOutline)ueOutline.style.removeProperty('outline');ueOutline=el;el.style.outline='2px solid #f0b948';},true);
  d.addEventListener('mouseout',()=>{if(ueOutline){ueOutline.style.removeProperty('outline');ueOutline=null;}},true);
- const observer=new MutationObserver(()=>{if(!d.documentElement.isConnected)return;ueRestoreAll();});
- observer.observe(d.body,{childList:true,subtree:true});
+ // Non osservare tutte le mutazioni: causerebbe cicli continui quando si modifica il testo.
+
 }
+
+// L'iframe può aver terminato il caricamento prima che questo script venga eseguito.
+if(preview.contentDocument?.readyState==='complete')universalDecorate();
