@@ -200,9 +200,12 @@ function setEditorMode(selector){
   const id=selector.slice(1);
   style.textContent=base+'#adminContent>section.panel{display:none!important}#adminContent>section#'+id+'{display:block!important;margin:8px 0!important}body>header{display:none!important}#logoutWrap{display:none!important}';
  }else{
-  style.textContent='';
+  style.textContent='#adminContent > section.panel{display:block!important}';
+  const content=d.getElementById('adminContent');
+  if(content&&d.getElementById('logoutWrap')?.style.display!=='none')content.style.setProperty('display','block','important');
+  d.documentElement.scrollTop=0;d.body.scrollTop=0;
  }
 }
-adminFrame.addEventListener('load',()=>{if(modal.classList.contains('open'))setEditorMode('#productForm');});
+adminFrame.addEventListener('load',()=>{if(modal.classList.contains('open'))setEditorMode('');});
 // Universal editor attaches its own load listener after initialization.
 </script><script src="universal-editor.js?v=20261030-6"></script></body></html>
